@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Detail HQ">
+<title>Detail HQ</title>
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f0;
+    --text2: #888;
+    --text3: #555;
+    --accent: #c8ff00;
+    --accent-dim: rgba(200,255,0,0.12);
+    --red: #ff4444;
+    --green: #44cc77;
+    --amber: #ffaa00;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  #app { display: flex; flex-direction: column; height: 100vh; height: -webkit-fill-available; }
+  #header { padding: 52px 18px 10px; display: flex; justify-content: space-between; align-items: flex-end; flex-shrink: 0; }
+  #header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  #header .right { display: flex; align-items: center; gap: 10px; }
+  #header .date { font-size: 13px; color: var(--text2); font-family: 'DM Mono', monospace; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex-shrink: 0; transition: background 0.3s; }
+  .sync-dot.synced { background: var(--green); }
+  .sync-dot.syncing { background: var(--amber); animation: pulse 1s infinite; }
+  .sync-dot.error { background: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  #content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0 14px 20px; -webkit-overflow-scrolling: touch; }
+  #nav { display: flex; padding: 10px 14px 30px; gap: 6px; flex-shrink: 0; border-top: 0.5px solid var(--border); background: var(--bg); }
+  .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border: none; background: none; color: var(--text2); font-size: 10px; font-family: 'DM Sans', sans-serif; cursor: pointer; border-radius: var(--radius-sm); transition: color 0.15s; }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .nav-btn.active { color: var(--accent); }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
+  .card-title { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; font-family: 'DM Mono', monospace; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .stat { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .stat.wide { grid-column: span 2; }
+  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; font-family: 'DM Mono', monospace; }
+  .stat-val { font-size: 26px; font-weight: 600; letter-spacing: -1px; }
+  .stat-val.green { color: var(--green); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.accent { color: var(--accent); }
+  .sec-head { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 10px; }
+  .sec-head h2 { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.6px; font-family: 'DM Mono', monospace; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; font-family: 'DM Mono', monospace; }
+  input[type=text], input[type=date], input[type=number], input[type=tel], select, textarea {
+    width: 100%; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+    color: var(--text); font-size: 15px; font-family: 'DM Sans', sans-serif; padding: 11px 12px;
+    outline: none; appearance: none; -webkit-appearance: none;
+  }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: none; height: 70px; }
+  .btn { width: 100%; padding: 13px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: transform 0.1s, opacity 0.1s; }
+  .btn:active { transform: scale(0.97); opacity: 0.85; }
+  .btn-accent { background: var(--accent); color: #0e0e0e; }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 0.5px solid var(--border2); }
+  .btn-danger { background: rgba(255,68,68,0.12); color: var(--red); border: 0.5px solid rgba(255,68,68,0.2); }
+  .btn-sm { padding: 8px 14px; font-size: 13px; width: auto; }
+  .job-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+  .job-card.done { opacity: 0.6; }
+  .job-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .job-name { font-size: 16px; font-weight: 600; }
+  .job-price { font-size: 18px; font-weight: 600; color: var(--accent); font-family: 'DM Mono', monospace; }
+  .job-meta { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .badge { display: inline-block; font-size: 10px; font-family: 'DM Mono', monospace; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+  .badge-pending { background: rgba(255,170,0,0.15); color: var(--amber); }
+  .badge-done { background: rgba(68,204,119,0.15); color: var(--green); }
+  .checklist { margin-top: 10px; border-top: 0.5px solid var(--border); padding-top: 8px; }
+  .checklist-title { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-bottom: 6px; }
+  .check-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid var(--border); cursor: pointer; user-select: none; }
+  .check-item:last-child { border-bottom: none; }
+  .check-box { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
+  .check-box.checked { background: var(--accent); border-color: var(--accent); }
+  .check-box.checked::after { content: ''; display: block; width: 5px; height: 9px; border: 2px solid #0e0e0e; border-top: none; border-left: none; transform: rotate(45deg) translateY(-1px); }
+  .check-label { font-size: 14px; color: var(--text); }
+  .check-label.done { text-decoration: line-through; color: var(--text3); }
+  .progress-bar { height: 3px; background: var(--border); border-radius: 2px; margin: 8px 0 0; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+  .job-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .job-actions button { flex: 1; }
+  .pkg-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
+  .pkg-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .pkg-name { font-size: 15px; font-weight: 600; }
+  .pkg-price { font-size: 16px; font-family: 'DM Mono', monospace; color: var(--accent); }
+  .pkg-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .addon-grid { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .addon-check { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: border-color 0.15s; }
+  .addon-check.selected { border-color: var(--accent); background: var(--accent-dim); }
+  .addon-check-box { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .addon-check.selected .addon-check-box { background: var(--accent); border-color: var(--accent); }
+  .addon-check.selected .addon-check-box::after { content: ''; display: block; width: 4px; height: 7px; border: 2px solid #0e0e0e; border-top: none; border-left: none; transform: rotate(45deg) translateY(-1px); }
+  .addon-label { font-size: 14px; flex: 1; }
+  .addon-price { font-size: 13px; color: var(--text2); font-family: 'DM Mono', monospace; }
+  .price-preview { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--accent-dim); border: 1px solid rgba(200,255,0,0.2); border-radius: var(--radius-sm); margin-bottom: 14px; }
+  .price-preview-label { font-size: 13px; color: var(--text2); }
+  .price-preview-val { font-size: 22px; font-weight: 700; color: var(--accent); font-family: 'DM Mono', monospace; }
+  .tab-bar { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tab-btn { flex: 1; padding: 8px; font-size: 13px; font-family: 'DM Mono', monospace; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); background: transparent; color: var(--text2); cursor: pointer; transition: all 0.15s; }
+  .tab-btn.active { background: var(--accent); color: #0e0e0e; border-color: var(--accent); font-weight: 600; }
+  .tx-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 0.5px solid var(--border); }
+  .tx-row:last-child { border-bottom: none; }
+  .tx-desc { font-size: 14px; }
+  .tx-date { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .tx-amt-income { font-size: 15px; font-weight: 600; color: var(--green); font-family: 'DM Mono', monospace; }
+  .tx-amt-expense { font-size: 15px; font-weight: 600; color: var(--red); font-family: 'DM Mono', monospace; }
+  .tx-right { display: flex; align-items: center; gap: 10px; }
+  .del-btn { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 2px 4px; line-height: 1; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: flex-end; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; padding: 20px 16px 40px; width: 100%; max-height: 85vh; overflow-y: auto; }
+  .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .modal-close { background: var(--surface2); border: none; color: var(--text2); font-size: 20px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 14px; }
+  .empty-icon { font-size: 32px; margin-bottom: 10px; }
+  .today-job { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .today-job-info { font-size: 14px; font-weight: 500; }
+  .today-job-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .today-job-price { font-size: 16px; font-weight: 600; color: var(--accent); font-family: 'DM Mono', monospace; }
+  .export-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .export-row button { flex: 1; }
+  .loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; gap: 16px; }
+  .loading-overlay.hidden { display: none; }
+  .spinner { width: 32px; height: 32px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--text2); font-family: 'DM Mono', monospace; }
+  #content::-webkit-scrollbar { width: 3px; }
+  #content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loader">
+  <div class="spinner"></div>
+  <div class="loading-text">loading detail hq...</div>
+</div>
+
+<div id="app">
+  <div id="header">
+    <h1>Detail HQ</h1>
+    <div class="right">
+      <div class="sync-dot" id="sync-dot" title="Sync status"></div>
+      <span class="date" id="header-date"></span>
+    </div>
+  </div>
+  <div id="content">
+
+    <!-- HOME -->
+    <div id="sec-home" class="section active">
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">this week</div><div class="stat-val accent" id="h-week">$0</div></div>
+        <div class="stat"><div class="stat-label">this month</div><div class="stat-val accent" id="h-month">$0</div></div>
+        <div class="stat"><div class="stat-label">jobs today</div><div class="stat-val" id="h-today-count">0</div></div>
+        <div class="stat"><div class="stat-label">completed</div><div class="stat-val" id="h-total">0</div></div>
+      </div>
+      <div class="sec-head"><h2>today's jobs</h2></div>
+      <div id="h-today-list"></div>
+      <div class="sec-head"><h2>packages</h2></div>
+      <div class="pkg-card">
+        <div class="pkg-top"><span class="pkg-name">Exterior wash</span><span class="pkg-price">$60 / $75</span></div>
+        <div class="pkg-desc">Exterior wash · windows · tire shine<br><span style="color:var(--text3);font-size:12px;">Car / Truck+SUV</span></div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-top"><span class="pkg-name">Interior detail</span><span class="pkg-price">$75 / $90</span></div>
+        <div class="pkg-desc">Vacuum · wipe-down · windows · mats<br><span style="color:var(--text3);font-size:12px;">Car / Truck+SUV</span></div>
+      </div>
+      <div class="pkg-card" style="border-color:rgba(200,255,0,0.3);">
+        <div class="pkg-top"><span class="pkg-name">Full detail</span><span class="pkg-price">$120 / $150</span></div>
+        <div class="pkg-desc">Everything + clay bar · wax/seal<br><span style="color:var(--text3);font-size:12px;">Car / Truck+SUV · Best value</span></div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-top"><span class="pkg-name">Add-ons</span></div>
+        <div class="pkg-desc">Pet hair +$25 · Headlights +$35 · Engine bay +$40 · Odor +$20</div>
+      </div>
+    </div>
+
+    <!-- BOOK -->
+    <div id="sec-book" class="section">
+      <div class="sec-head"><h2>new booking</h2></div>
+      <div class="card">
+        <div class="field"><label>Client name</label><input type="text" id="b-name" placeholder="John Smith"></div>
+        <div class="field"><label>Phone</label><input type="tel" id="b-phone" placeholder="(423) 555-0101"></div>
+        <div class="field"><label>Date</label><input type="date" id="b-date"></div>
+        <div class="field"><label>Vehicle</label>
+          <select id="b-vehicle" onchange="updatePrice()">
+            <option value="Car">Car / Sedan</option>
+            <option value="Truck/SUV">Truck / SUV</option>
+          </select>
+        </div>
+        <div class="field"><label>Package</label>
+          <select id="b-pkg" onchange="updatePrice()">
+            <option value="Exterior wash" data-car="60" data-truck="75">Exterior wash</option>
+            <option value="Interior detail" data-car="75" data-truck="90">Interior detail</option>
+            <option value="Full detail" data-car="120" data-truck="150">Full detail</option>
+          </select>
+        </div>
+        <div class="field"><label>Add-ons</label>
+          <div class="addon-grid">
+            <div class="addon-check" onclick="toggleAddon(this)"><div class="addon-check-box"></div><span class="addon-label">Pet hair removal</span><span class="addon-price">+$25</span></div>
+            <div class="addon-check" onclick="toggleAddon(this)"><div class="addon-check-box"></div><span class="addon-label">Headlight restoration</span><span class="addon-price">+$35</span></div>
+            <div class="addon-check" onclick="toggleAddon(this)"><div class="addon-check-box"></div><span class="addon-label">Engine bay</span><span class="addon-price">+$40</span></div>
+            <div class="addon-check" onclick="toggleAddon(this)"><div class="addon-check-box"></div><span class="addon-label">Odor treatment</span><span class="addon-price">+$20</span></div>
+          </div>
+        </div>
+        <div class="field"><label>Notes</label><textarea id="b-notes" placeholder="Color, make, special requests..."></textarea></div>
+        <div class="price-preview"><span class="price-preview-label">Total</span><span class="price-preview-val" id="price-display">$60</span></div>
+        <button class="btn btn-accent" onclick="addBooking()">Add booking</button>
+      </div>
+    </div>
+
+    <!-- JOBS -->
+    <div id="sec-jobs" class="section">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchJobTab('upcoming',this)">Upcoming</button>
+        <button class="tab-btn" onclick="switchJobTab('past',this)">Completed</button>
+      </div>
+      <div id="jobs-upcoming"></div>
+      <div id="jobs-past" style="display:none;"></div>
+    </div>
+
+    <!-- MONEY -->
+    <div id="sec-money" class="section">
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-label">income</div><div class="stat-val green" id="m-income">$0</div></div>
+        <div class="stat"><div class="stat-label">expenses</div><div class="stat-val red" id="m-expenses">$0</div></div>
+        <div class="stat wide"><div class="stat-label">net profit</div><div class="stat-val" id="m-net">$0</div></div>
+      </div>
+      <div class="export-row">
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV('jobs')">Export jobs CSV</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV('money')">Export finance CSV</button>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchMoneyTab('add',this)">Add entry</button>
+        <button class="tab-btn" onclick="switchMoneyTab('log',this)">Log</button>
+      </div>
+      <div id="money-add">
+        <div class="card">
+          <div class="field"><label>Type</label>
+            <select id="tx-type">
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+          </div>
+          <div class="field"><label>Description</label><input type="text" id="tx-desc" placeholder="Full detail — John Smith"></div>
+          <div class="field"><label>Amount ($)</label><input type="number" id="tx-amt" placeholder="150" min="0" step="0.01"></div>
+          <div class="field"><label>Date</label><input type="date" id="tx-date"></div>
+          <button class="btn btn-accent" onclick="addTransaction()">Add entry</button>
+        </div>
+      </div>
+      <div id="money-log" style="display:none;">
+        <div class="card"><div id="tx-list"></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="nav">
+    <button class="nav-btn active" onclick="switchSection('home',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </button>
+    <button class="nav-btn" onclick="switchSection('book',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Book
+    </button>
+    <button class="nav-btn" onclick="switchSection('jobs',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Jobs
+    </button>
+    <button class="nav-btn" onclick="switchSection('money',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Money
+    </button>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">Edit booking <button class="modal-close" onclick="closeEdit()">✕</button></div>
+    <div class="field"><label>Client name</label><input type="text" id="e-name"></div>
+    <div class="field"><label>Phone</label><input type="tel" id="e-phone"></div>
+    <div class="field"><label>Date</label><input type="date" id="e-date"></div>
+    <div class="field"><label>Vehicle</label>
+      <select id="e-vehicle">
+        <option value="Car">Car / Sedan</option>
+        <option value="Truck/SUV">Truck / SUV</option>
+      </select>
+    </div>
+    <div class="field"><label>Package</label>
+      <select id="e-pkg">
+        <option value="Exterior wash">Exterior wash</option>
+        <option value="Interior detail">Interior detail</option>
+        <option value="Full detail">Full detail</option>
+      </select>
+    </div>
+    <div class="field"><label>Price ($)</label><input type="number" id="e-price"></div>
+    <div class="field"><label>Notes</label><textarea id="e-notes"></textarea></div>
+    <button class="btn btn-accent" onclick="saveEdit()" style="margin-bottom:10px;">Save changes</button>
+    <button class="btn btn-ghost" onclick="closeEdit()">Cancel</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://sypanzbuipospisshaxv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5cGFuemJ1aXBvc3Bpc3NoYXh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDcwNzYsImV4cCI6MjA5NTU4MzA3Nn0.Ditn6Dm83yOihhkxED72GD3W1FlyyPBcOygfPCisIwQ';
+
+const CHECKLISTS = {
+  'Exterior wash': ['Pre-rinse vehicle','Foam / soap application','Hand wash all panels','Clean wheels & tires','Rinse thoroughly','Dry with microfiber','Tire shine','Clean windows (exterior)'],
+  'Interior detail': ['Remove & shake out floor mats','Vacuum seats & floors','Wipe dash & console','Clean door panels','Clean cup holders & vents','Clean windows (interior)','Deodorize','Replace floor mats'],
+  'Full detail': ['Pre-rinse vehicle','Foam / soap application','Hand wash all panels','Clay bar paint surface','Clean wheels & tires','Rinse & dry','Polish / wax / seal','Tire shine','Clean windows (exterior)','Remove & shake out floor mats','Vacuum seats & floors','Wipe dash & console','Clean door panels','Clean cup holders & vents','Clean windows (interior)','Deodorize']
+};
+
+let jobs = [];
+let transactions = [];
+let editingId = null;
+const todayStr = new Date().toISOString().split('T')[0];
+
+function setSyncStatus(status) {
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot ' + status;
+}
+
+async function api(method, table, body, id) {
+  const url = id
+    ? `${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`
+    : `${SUPABASE_URL}/rest/v1/${table}`;
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  if (method === 'GET' || (method === 'POST' && res.status !== 204)) {
+    try { return await res.json(); } catch { return null; }
+  }
+  return null;
+}
+
+async function loadAll() {
+  setSyncStatus('syncing');
+  try {
+    const [j, t] = await Promise.all([
+      api('GET', 'jobs'),
+      api('GET', 'transactions')
+    ]);
+    jobs = (j || []).map(row => ({
+      ...row,
+      addons: row.addons ? row.addons.split('||').filter(Boolean) : [],
+      checks: row.checks ? JSON.parse(row.checks) : {}
+    }));
+    transactions = (t || []).map(row => ({
+      ...row,
+      desc: row.description
+    }));
+    setSyncStatus('synced');
+  } catch(e) {
+    setSyncStatus('error');
+    console.error('Load error:', e);
+  }
+}
+
+function jobToRow(j) {
+  return {
+    id: j.id,
+    name: j.name,
+    phone: j.phone || '',
+    date: j.date,
+    vehicle: j.vehicle,
+    pkg: j.pkg,
+    addons: (j.addons || []).join('||'),
+    notes: j.notes || '',
+    price: j.price,
+    done: j.done || false,
+    checks: JSON.stringify(j.checks || {})
+  };
+}
+
+function txToRow(t) {
+  return {
+    id: t.id,
+    type: t.type,
+    description: t.desc || t.description,
+    amount: t.amount,
+    date: t.date
+  };
+}
+
+document.getElementById('b-date').value = todayStr;
+document.getElementById('tx-date').value = todayStr;
+document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+
+function switchSection(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'home') renderHome();
+  if (name === 'jobs') renderJobs();
+  if (name === 'money') renderMoney();
+}
+
+function switchJobTab(name, btn) {
+  document.getElementById('jobs-upcoming').style.display = name === 'upcoming' ? 'block' : 'none';
+  document.getElementById('jobs-past').style.display = name === 'past' ? 'block' : 'none';
+  document.querySelectorAll('#sec-jobs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function switchMoneyTab(name, btn) {
+  document.getElementById('money-add').style.display = name === 'add' ? 'block' : 'none';
+  document.getElementById('money-log').style.display = name === 'log' ? 'block' : 'none';
+  document.querySelectorAll('#sec-money .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (name === 'log') renderTxList();
+}
+
+function toggleAddon(el) {
+  el.classList.toggle('selected');
+  updatePrice();
+}
+
+function updatePrice() {
+  const isTruck = document.getElementById('b-vehicle').value === 'Truck/SUV';
+  const pkg = document.getElementById('b-pkg');
+  const opt = pkg.options[pkg.selectedIndex];
+  let price = isTruck ? parseInt(opt.dataset.truck) : parseInt(opt.dataset.car);
+  document.querySelectorAll('#sec-book .addon-check.selected').forEach(el => {
+    price += parseInt(el.querySelector('.addon-price').textContent.replace('+$',''));
+  });
+  document.getElementById('price-display').textContent = '$' + price;
+}
+
+async function addBooking() {
+  const name = document.getElementById('b-name').value.trim();
+  const date = document.getElementById('b-date').value;
+  if (!name || !date) { alert('Name and date are required'); return; }
+  const isTruck = document.getElementById('b-vehicle').value === 'Truck/SUV';
+  const pkg = document.getElementById('b-pkg');
+  const opt = pkg.options[pkg.selectedIndex];
+  let price = isTruck ? parseInt(opt.dataset.truck) : parseInt(opt.dataset.car);
+  const addons = [];
+  document.querySelectorAll('#sec-book .addon-check.selected').forEach(el => {
+    price += parseInt(el.querySelector('.addon-price').textContent.replace('+$',''));
+    addons.push(el.querySelector('.addon-label').textContent);
+  });
+  const job = {
+    id: Date.now(),
+    name,
+    phone: document.getElementById('b-phone').value.trim(),
+    date,
+    vehicle: document.getElementById('b-vehicle').value,
+    pkg: opt.value,
+    addons,
+    notes: document.getElementById('b-notes').value.trim(),
+    price,
+    done: false,
+    checks: {}
+  };
+  setSyncStatus('syncing');
+  try {
+    await api('POST', 'jobs', jobToRow(job));
+    jobs.push(job);
+    setSyncStatus('synced');
+    document.getElementById('b-name').value = '';
+    document.getElementById('b-phone').value = '';
+    document.getElementById('b-notes').value = '';
+    document.getElementById('b-date').value = todayStr;
+    document.querySelectorAll('#sec-book .addon-check.selected').forEach(el => el.classList.remove('selected'));
+    updatePrice();
+    alert('Booking added!');
+  } catch(e) {
+    setSyncStatus('error');
+    alert('Error saving booking. Check your connection.');
+  }
+}
+
+function renderHome() {
+  const now = new Date();
+  const todayISO = now.toISOString().split('T')[0];
+  const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
+  const weekStartISO = weekStart.toISOString().split('T')[0];
+  const monthISO = now.toISOString().slice(0,7);
+  const incTx = transactions.filter(t => t.type === 'income');
+  const weekRev = incTx.filter(t => t.date >= weekStartISO).reduce((s,t) => s+Number(t.amount),0);
+  const monthRev = incTx.filter(t => t.date.startsWith(monthISO)).reduce((s,t) => s+Number(t.amount),0);
+  document.getElementById('h-week').textContent = '$' + weekRev;
+  document.getElementById('h-month').textContent = '$' + monthRev;
+  document.getElementById('h-total').textContent = jobs.filter(j => j.done).length;
+  const todayJobs = jobs.filter(j => j.date === todayISO && !j.done);
+  document.getElementById('h-today-count').textContent = todayJobs.length;
+  const tl = document.getElementById('h-today-list');
+  tl.innerHTML = '';
+  if (!todayJobs.length) { tl.innerHTML = '<div class="empty"><div class="empty-icon">📅</div>No jobs scheduled today</div>'; return; }
+  todayJobs.forEach(j => {
+    const d = document.createElement('div');
+    d.className = 'today-job';
+    d.innerHTML = `<div><div class="today-job-info">${j.name}</div><div class="today-job-sub">${j.vehicle} · ${j.pkg}${j.addons.length?' + addons':''}</div></div><div class="today-job-price">$${j.price}</div>`;
+    tl.appendChild(d);
+  });
+}
+
+function renderJobs() {
+  const up = document.getElementById('jobs-upcoming');
+  const past = document.getElementById('jobs-past');
+  up.innerHTML = ''; past.innerHTML = '';
+  const upcoming = jobs.filter(j => !j.done).sort((a,b) => a.date.localeCompare(b.date));
+  const done = jobs.filter(j => j.done).sort((a,b) => b.date.localeCompare(a.date));
+  if (!upcoming.length) up.innerHTML = '<div class="empty"><div class="empty-icon">✅</div>No upcoming jobs</div>';
+  else upcoming.forEach(j => renderJobCard(j, up));
+  if (!done.length) past.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>No completed jobs yet</div>';
+  else done.forEach(j => renderJobCard(j, past));
+}
+
+function renderJobCard(j, container) {
+  const checks = CHECKLISTS[j.pkg] || [];
+  const total = checks.length;
+  const doneCount = Object.values(j.checks).filter(Boolean).length;
+  const pct = total ? Math.round((doneCount/total)*100) : 0;
+  const div = document.createElement('div');
+  div.className = 'job-card' + (j.done ? ' done' : '');
+  div.innerHTML = `
+    <div class="job-top">
+      <div>
+        <div class="job-name">${j.name}</div>
+        <div class="job-meta">${j.date} · ${j.vehicle}<br>${j.pkg}${j.addons.length?' + '+j.addons.length+' add-on'+(j.addons.length>1?'s':''):''}</div>
+        ${j.phone?`<div class="job-meta">${j.phone}</div>`:''}
+        ${j.notes?`<div class="job-meta" style="color:var(--text3);">${j.notes}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <span class="badge ${j.done?'badge-done':'badge-pending'}">${j.done?'done':'pending'}</span>
+        <span class="job-price">$${j.price}</span>
+      </div>
+    </div>
+    <div class="checklist">
+      <div class="checklist-title">checklist · ${doneCount}/${total}</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      ${checks.map((c,i) => `
+        <div class="check-item" onclick="toggleCheck(${j.id},${i})">
+          <div class="check-box ${j.checks[i]?'checked':''}"></div>
+          <span class="check-label ${j.checks[i]?'done':''}">${c}</span>
+        </div>`).join('')}
+    </div>
+    <div class="job-actions">
+      ${!j.done?`<button class="btn btn-accent btn-sm" onclick="markDone(${j.id})">Mark complete</button>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="openEdit(${j.id})">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteJob(${j.id})">Delete</button>
+    </div>`;
+  container.appendChild(div);
+}
+
+async function toggleCheck(id, idx) {
+  const j = jobs.find(j => j.id === id);
+  if (!j) return;
+  j.checks[idx] = !j.checks[idx];
+  setSyncStatus('syncing');
+  try {
+    await api('PATCH', 'jobs', { checks: JSON.stringify(j.checks) }, id);
+    setSyncStatus('synced');
+  } catch(e) { setSyncStatus('error'); }
+  renderJobs();
+}
+
+async function markDone(id) {
+  const j = jobs.find(j => j.id === id);
+  if (!j) return;
+  j.done = true;
+  const tx = { id: Date.now(), type: 'income', desc: j.pkg + ' — ' + j.name, description: j.pkg + ' — ' + j.name, amount: j.price, date: j.date };
+  setSyncStatus('syncing');
+  try {
+    await api('PATCH', 'jobs', { done: true }, id);
+    await api('POST', 'transactions', txToRow(tx));
+    transactions.push(tx);
+    setSyncStatus('synced');
+  } catch(e) { setSyncStatus('error'); }
+  renderJobs();
+  renderMoney();
+}
+
+async function deleteJob(id) {
+  if (!confirm('Delete this job?')) return;
+  setSyncStatus('syncing');
+  try {
+    await api('DELETE', 'jobs', null, id);
+    jobs = jobs.filter(j => j.id !== id);
+    setSyncStatus('synced');
+  } catch(e) { setSyncStatus('error'); }
+  renderJobs();
+}
+
+function openEdit(id) {
+  const j = jobs.find(j => j.id === id);
+  if (!j) return;
+  editingId = id;
+  document.getElementById('e-name').value = j.name;
+  document.getElementById('e-phone').value = j.phone || '';
+  document.getElementById('e-date').value = j.date;
+  document.getElementById('e-vehicle').value = j.vehicle;
+  document.getElementById('e-pkg').value = j.pkg;
+  document.getElementById('e-price').value = j.price;
+  document.getElementById('e-notes').value = j.notes || '';
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEdit() {
+  document.getElementById('edit-modal').classList.remove('open');
+  editingId = null;
+}
+
+async function saveEdit() {
+  const j = jobs.find(j => j.id === editingId);
+  if (!j) return;
+  j.name = document.getElementById('e-name').value.trim();
+  j.phone = document.getElementById('e-phone').value.trim();
+  j.date = document.getElementById('e-date').value;
+  j.vehicle = document.getElementById('e-vehicle').value;
+  j.pkg = document.getElementById('e-pkg').value;
+  j.price = parseFloat(document.getElementById('e-price').value) || j.price;
+  j.notes = document.getElementById('e-notes').value.trim();
+  setSyncStatus('syncing');
+  try {
+    await api('PATCH', 'jobs', jobToRow(j), editingId);
+    setSyncStatus('synced');
+    closeEdit();
+    renderJobs();
+  } catch(e) {
+    setSyncStatus('error');
+    alert('Error saving. Check your connection.');
+  }
+}
+
+function renderMoney() {
+  const income = transactions.filter(t => t.type === 'income').reduce((s,t) => s+Number(t.amount),0);
+  const expense = transactions.filter(t => t.type === 'expense').reduce((s,t) => s+Number(t.amount),0);
+  const net = income - expense;
+  document.getElementById('m-income').textContent = '$' + income.toFixed(2);
+  document.getElementById('m-expenses').textContent = '$' + expense.toFixed(2);
+  const netEl = document.getElementById('m-net');
+  netEl.textContent = (net >= 0 ? '+' : '') + '$' + net.toFixed(2);
+  netEl.className = 'stat-val ' + (net >= 0 ? 'green' : 'red');
+}
+
+function renderTxList() {
+  const list = document.getElementById('tx-list');
+  list.innerHTML = '';
+  if (!transactions.length) { list.innerHTML = '<div class="empty">No entries yet</div>'; return; }
+  [...transactions].reverse().forEach(t => {
+    const d = document.createElement('div');
+    d.className = 'tx-row';
+    const label = t.desc || t.description || '';
+    d.innerHTML = `
+      <div><div class="tx-desc">${label}</div><div class="tx-date">${t.date}</div></div>
+      <div class="tx-right">
+        <span class="${t.type==='income'?'tx-amt-income':'tx-amt-expense'}">${t.type==='income'?'+':'-'}$${Number(t.amount).toFixed(2)}</span>
+        <button class="del-btn" onclick="deleteTx(${t.id})">✕</button>
+      </div>`;
+    list.appendChild(d);
+  });
+}
+
+async function addTransaction() {
+  const desc = document.getElementById('tx-desc').value.trim();
+  const amt = parseFloat(document.getElementById('tx-amt').value);
+  const date = document.getElementById('tx-date').value;
+  if (!desc || !amt || !date) { alert('All fields required'); return; }
+  const tx = { id: Date.now(), type: document.getElementById('tx-type').value, desc, description: desc, amount: amt, date };
+  setSyncStatus('syncing');
+  try {
+    await api('POST', 'transactions', txToRow(tx));
+    transactions.push(tx);
+    setSyncStatus('synced');
+    document.getElementById('tx-desc').value = '';
+    document.getElementById('tx-amt').value = '';
+    document.getElementById('tx-date').value = todayStr;
+    renderMoney();
+    alert('Entry added!');
+  } catch(e) {
+    setSyncStatus('error');
+    alert('Error saving. Check your connection.');
+  }
+}
+
+async function deleteTx(id) {
+  if (!confirm('Delete this entry?')) return;
+  setSyncStatus('syncing');
+  try {
+    await api('DELETE', 'transactions', null, id);
+    transactions = transactions.filter(t => t.id !== id);
+    setSyncStatus('synced');
+  } catch(e) { setSyncStatus('error'); }
+  renderTxList();
+  renderMoney();
+}
+
+function exportCSV(type) {
+  let csv, filename;
+  if (type === 'jobs') {
+    csv = 'Name,Phone,Date,Vehicle,Package,Add-ons,Price,Notes,Status\n';
+    jobs.forEach(j => { csv += `"${j.name}","${j.phone||''}","${j.date}","${j.vehicle}","${j.pkg}","${(j.addons||[]).join('; ')}","$${j.price}","${j.notes||''}","${j.done?'Completed':'Pending'}"\n`; });
+    filename = 'detail-hq-jobs.csv';
+  } else {
+    csv = 'Date,Type,Description,Amount\n';
+    transactions.forEach(t => { csv += `"${t.date}","${t.type}","${t.desc||t.description||''}","$${Number(t.amount).toFixed(2)}"\n`; });
+    filename = 'detail-hq-finances.csv';
+  }
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Init
+(async () => {
+  await loadAll();
+  document.getElementById('loader').classList.add('hidden');
+  renderHome();
+})();
+</script>
+</body>
+</html>
