@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Detail Admin">
+<title>Detail HQ — Admin</title>
+<style>
+  :root {
+    --bg: #0e0e0e; --surface: #1a1a1a; --surface2: #222;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --text: #f0f0f0; --text2: #888; --text3: #444;
+    --accent: #c8ff00; --accent-dim: rgba(200,255,0,0.1);
+    --red: #ff4444; --green: #44cc77; --amber: #ffaa00;
+    --radius: 14px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  /* Login */
+  .login-screen { max-width: 360px; margin: 0 auto; padding: 80px 20px; text-align: center; }
+  .login-screen h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+  .login-screen p { font-size: 14px; color: var(--text2); margin-bottom: 32px; }
+  .login-field { margin-bottom: 14px; text-align: left; }
+  .login-field label { display: block; font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; margin-bottom: 5px; }
+  input[type=password], input[type=text], input[type=date], input[type=number], select {
+    width: 100%; background: var(--surface2); border: 0.5px solid var(--border2);
+    border-radius: var(--radius-sm); color: var(--text); font-size: 15px;
+    font-family: 'DM Sans', sans-serif; padding: 12px 14px; outline: none;
+    appearance: none; -webkit-appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+
+  /* App */
+  .app { display: none; max-width: 500px; margin: 0 auto; padding: 40px 16px 60px; }
+  .app.visible { display: block; }
+
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .header h1 { font-size: 22px; font-weight: 600; }
+  .logout-btn { font-size: 12px; color: var(--text2); background: none; border: none; cursor: pointer; font-family: 'DM Mono', monospace; }
+
+  .section-title { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; font-family: 'DM Mono', monospace; margin-bottom: 14px; margin-top: 28px; }
+
+  /* Add availability */
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; margin-bottom: 5px; }
+
+  .btn { width: 100%; padding: 13px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: transform 0.1s; margin-bottom: 8px; }
+  .btn:active { transform: scale(0.97); }
+  .btn-accent { background: var(--accent); color: #0e0e0e; }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 0.5px solid var(--border2); }
+  .btn-danger { background: rgba(255,68,68,0.1); color: var(--red); border: 0.5px solid rgba(255,68,68,0.2); }
+  .btn-sm { padding: 8px 14px; font-size: 13px; width: auto; }
+  .btn-success { background: rgba(68,204,119,0.1); color: var(--green); border: 0.5px solid rgba(68,204,119,0.25); }
+
+  /* Availability rows */
+  .avail-row { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .avail-date { font-size: 15px; font-weight: 500; }
+  .avail-slots { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .avail-actions { display: flex; gap: 6px; }
+
+  /* Booking requests */
+  .request-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+  .request-card.confirmed { border-color: rgba(68,204,119,0.3); }
+  .req-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .req-name { font-size: 16px; font-weight: 600; }
+  .req-meta { font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .badge { display: inline-block; font-size: 10px; font-family: 'DM Mono', monospace; padding: 3px 8px; border-radius: 20px; }
+  .badge-pending { background: rgba(255,170,0,0.15); color: var(--amber); }
+  .badge-confirmed { background: rgba(68,204,119,0.15); color: var(--green); }
+  .req-price { font-size: 16px; font-weight: 600; color: var(--accent); font-family: 'DM Mono', monospace; }
+  .req-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .req-actions button { flex: 1; }
+
+  .empty { text-align: center; padding: 30px; color: var(--text3); font-size: 14px; }
+
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+</style>
+</head>
+<body>
+
+<!-- Login screen -->
+<div class="login-screen" id="login-screen">
+  <h1>Detail HQ</h1>
+  <p>Admin access only</p>
+  <div class="login-field"><label>Password</label><input type="password" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryLogin()"></div>
+  <button class="btn btn-accent" onclick="tryLogin()">Sign in</button>
+</div>
+
+<!-- App -->
+<div class="app" id="app">
+  <div class="header">
+    <h1>Admin</h1>
+    <button class="logout-btn" onclick="logout()">sign out</button>
+  </div>
+
+  <!-- Booking requests -->
+  <div class="section-title">Booking requests</div>
+  <div id="requests-list"></div>
+
+  <!-- Add availability -->
+  <div class="section-title">Open availability</div>
+  <div class="card">
+    <div class="field"><label>Date</label><input type="date" id="av-date"></div>
+    <div class="field"><label>Max slots (1–3)</label>
+      <select id="av-slots">
+        <option value="1">1 car</option>
+        <option value="2">2 cars</option>
+        <option value="3" selected>3 cars</option>
+      </select>
+    </div>
+    <button class="btn btn-accent" onclick="addAvailability()">Open this day</button>
+  </div>
+
+  <div class="section-title">Upcoming open days</div>
+  <div id="avail-list"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://sypanzbuipospisshaxv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5cGFuemJ1aXBvc3Bpc3NoYXh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDcwNzYsImV4cCI6MjA5NTU4MzA3Nn0.Ditn6Dm83yOihhkxED72GD3W1FlyyPBcOygfPCisIwQ';
+const ADMIN_PASSWORD = 'detail2025';
+const todayStr = new Date().toISOString().split('T')[0];
+
+async function api(method, table, body, query) {
+  const url = query
+    ? `${SUPABASE_URL}/rest/v1/${table}?${query}`
+    : `${SUPABASE_URL}/rest/v1/${table}`;
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (method === 'GET') { try { return await res.json(); } catch { return []; } }
+  return res;
+}
+
+function tryLogin() {
+  const pw = document.getElementById('pw-input').value;
+  if (pw === ADMIN_PASSWORD) {
+    sessionStorage.setItem('dhq_admin', '1');
+    showApp();
+  } else {
+    alert('Wrong password');
+    document.getElementById('pw-input').value = '';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('dhq_admin');
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').style.display = 'block';
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('av-date').value = todayStr;
+  loadAll();
+}
+
+async function loadAll() {
+  await Promise.all([loadRequests(), loadAvailability()]);
+}
+
+async function loadRequests() {
+  const rows = await api('GET', 'booking_requests', null, 'order=id.desc');
+  const list = document.getElementById('requests-list');
+  list.innerHTML = '';
+  if (!rows || !rows.length) { list.innerHTML = '<div class="empty">No booking requests yet</div>'; return; }
+  rows.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'request-card' + (r.status === 'confirmed' ? ' confirmed' : '');
+    const addonStr = r.addons ? r.addons : 'None';
+    card.innerHTML = `
+      <div class="req-top">
+        <div>
+          <div class="req-name">${r.client_name}</div>
+          <div class="req-meta">
+            ${r.date} · ${r.vehicle_type}<br>
+            ${r.package_name}${r.addons ? ' + ' + r.addons : ''}<br>
+            ${r.client_phone}<br>
+            ${r.vehicle_desc}<br>
+            ${r.address}
+            ${r.notes ? '<br>' + r.notes : ''}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <span class="badge ${r.status === 'confirmed' ? 'badge-confirmed' : 'badge-pending'}">${r.status}</span>
+          <span class="req-price">$${r.price}${r.addons && r.addons.includes('Ceramic') ? '+' : ''}</span>
+        </div>
+      </div>
+      ${r.status === 'pending' ? `
+      <div class="req-actions">
+        <button class="btn btn-success btn-sm" onclick="confirmRequest(${r.id}, '${r.client_phone}', '${r.date}', '${r.package_name}')">Confirm</button>
+        <button class="btn btn-danger btn-sm" onclick="declineRequest(${r.id})">Decline</button>
+      </div>` : ''}`;
+    list.appendChild(card);
+  });
+}
+
+async function confirmRequest(id, phone, date, pkg) {
+  await api('PATCH', 'booking_requests', { status: 'confirmed' }, `id=eq.${id}`);
+  await api('PATCH', 'jobs', { notes: `${date} · ${pkg} [CONFIRMED]` }, `id=eq.${id}`);
+  const msg = `Hi! This is Lofton — your ${pkg} on ${date} is confirmed. Text me at 423-608-9732 with any questions. See you then!`;
+  window.open(`sms:${phone}?body=${encodeURIComponent(msg)}`);
+  loadAll();
+}
+
+async function declineRequest(id) {
+  if (!confirm('Decline this request?')) return;
+  await api('PATCH', 'booking_requests', { status: 'declined' }, `id=eq.${id}`);
+  await api('DELETE', 'jobs', null, `id=eq.${id}`);
+  loadAll();
+}
+
+async function loadAvailability() {
+  const rows = await api('GET', 'availability', null, `date=gte.${todayStr}&order=date.asc`);
+  const list = document.getElementById('avail-list');
+  list.innerHTML = '';
+  if (!rows || !rows.length) { list.innerHTML = '<div class="empty">No open days set</div>'; return; }
+  rows.forEach(r => {
+    const dt = new Date(r.date + 'T12:00:00');
+    const label = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    const div = document.createElement('div');
+    div.className = 'avail-row';
+    div.innerHTML = `
+      <div>
+        <div class="avail-date">${label}</div>
+        <div class="avail-slots">${r.slots_remaining} of ${r.max_slots} slots open</div>
+      </div>
+      <div class="avail-actions">
+        <button class="btn btn-danger btn-sm" onclick="removeAvailability(${r.id})">Remove</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+async function addAvailability() {
+  const date = document.getElementById('av-date').value;
+  const slots = parseInt(document.getElementById('av-slots').value);
+  if (!date) { alert('Pick a date'); return; }
+  await api('POST', 'availability', { date, max_slots: slots, slots_remaining: slots });
+  loadAvailability();
+}
+
+async function removeAvailability(id) {
+  if (!confirm('Remove this day?')) return;
+  await api('DELETE', 'availability', null, `id=eq.${id}`);
+  loadAvailability();
+}
+
+if (sessionStorage.getItem('dhq_admin')) showApp();
+</script>
+</body>
+</html>
